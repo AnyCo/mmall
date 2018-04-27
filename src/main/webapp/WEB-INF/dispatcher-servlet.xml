@@ -47,13 +47,13 @@
     <mvc:interceptors>
         <!-- 定义在这里的，所有的都会拦截-->
         <mvc:interceptor>
+            <!--注意这里/*不包含子目录，/**是包含子目录的-->
             <!--manage/a.do  /manage/*-->
             <!--manage/b.do  /manage/*-->
             <!--manage/product/save.do /manage/**-->
             <!--manage/order/detail.do /manage/**-->
             <mvc:mapping path="/manage/**"/>
-            <!--<mvc:exclude-mapping path="/manage/user/login.do"/>-->
-            <bean class="com.mmall.controller.common.interceptor.AuthorityInterceptor" />
+            <bean class="com.mmall.controller.common.AuthorityInterceptor" />
         </mvc:interceptor>
 
     </mvc:interceptors>
