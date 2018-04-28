@@ -38,8 +38,10 @@ import com.mmall.vo.OrderItemVo;
 import com.mmall.vo.OrderProductVo;
 import com.mmall.vo.OrderVo;
 import com.mmall.vo.ShippingVo;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +60,7 @@ import java.util.Random;
  * Created by geely
  */
 @Service("iOrderService")
+@Slf4j
 public class OrderServiceImpl implements IOrderService {
 
 
@@ -637,26 +640,34 @@ public class OrderServiceImpl implements IOrderService {
 
 
 
+    @Override
+    public void closeOrder(int hour) {
+        //这里是负数，如果订单过期时间是2小时，那校验某个订单当前时间是否过期，需要用now-2(结果为time)
+        //比较time和createtime，如果time>createtime，那么订单过期
+        Date closeDateTime = DateUtils.addHours(new Date(),-hour);
 
+        //获取过期的订单列表
+        List<Order> orderList = orderMapper.selectOrderStatusByCreateTime(Const.OrderStatusEnum.NO_PAY.getCode(),DateTimeUtil.dateToStr(closeDateTime));
 
+        for(Order order : orderList){
+            List<OrderItem> orderItemList = orderItemMapper.getByOrderNo(order.getOrderNo());
+            for(OrderItem orderItem : orderItemList){
 
+                //使用悲观锁查询商品的库存
+                Integer stock = productMapper.selectStockByProductId(orderItem.getProductId());
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                if(stock == null){ //订单里，商品被删除的情况
+                    continue;
+                }
+                Product product = new Product();
+                product.setId(orderItem.getProductId());
+                product.setStock(stock+orderItem.getQuantity());
+                productMapper.updateByPrimaryKeySelective(product);
+            }
+            orderMapper.closeOrderByOrderId(order.getId());
+            log.info("关闭订单OrderNo：{}",order.getOrderNo());
+        }
+    }
 
 
 }
