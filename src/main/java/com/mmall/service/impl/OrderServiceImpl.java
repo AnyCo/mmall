@@ -656,7 +656,7 @@ public class OrderServiceImpl implements IOrderService {
                 //使用悲观锁查询商品的库存
                 Integer stock = productMapper.selectStockByProductId(orderItem.getProductId());
 
-                if(stock == null){ //订单里，商品被删除的情况
+                if(stock == null){ //订单里，商品已经被删除后，不需要再进行加库存操作
                     continue;
                 }
                 Product product = new Product();
